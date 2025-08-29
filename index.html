@@ -4,13 +4,16 @@
 <meta charset="UTF-8">
 <title>Staattinen Database</title>
 <style>
+body { font-family: Arial, sans-serif; margin: 20px; }
 table { border-collapse: collapse; width: 100%; }
 th, td { border: 1px solid #ccc; padding: 8px; text-align: left; cursor: pointer; }
 th:hover { background-color: #f0f0f0; }
+input { padding: 8px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
 </style>
 </head>
 <body>
 <h2>Staattinen Database</h2>
+<input type="text" id="search" placeholder="Hae...">
 <table id="data-table">
   <thead></thead>
   <tbody></tbody>
@@ -19,36 +22,61 @@ th:hover { background-color: #f0f0f0; }
 <script>
 // JSON URL GitHub Pagesista
 const url = 'https://raw.githubusercontent.com/MikoLiukk/MaWaDB/main/tableConvert.com_yw7td6.json';
+let jsonData = [];
+let sortDirections = [];
 
-// Hae ja näytä data
+const table = document.getElementById('data-table');
+const tbody = table.querySelector('tbody');
+const thead = table.querySelector('thead');
+const searchInput = document.getElementById('search');
+
+// Hae data
 fetch(url)
   .then(res => res.json())
   .then(data => {
-    const table = document.getElementById('data-table');
-    const keys = Object.keys(data[0] || {});
+    jsonData = data;
+    if (data.length === 0) return;
     
+    const keys = Object.keys(data[0]);
+    sortDirections = Array(keys.length).fill(true); // true = nouseva
+
     // Luo header
-    table.querySelector('thead').innerHTML = '<tr>' + keys.map(k => `<th>${k}</th>`).join('') + '</tr>';
+    thead.innerHTML = '<tr>' + keys.map((k, idx) => `<th data-idx="${idx}">${k}</th>`).join('') + '</tr>';
     
-    // Luo body
-    const tbody = table.querySelector('tbody');
-    data.forEach(item => {
-      const row = '<tr>' + keys.map(k => `<td>${item[k]}</td>`).join('') + '</tr>';
-      tbody.innerHTML += row;
-    });
-    
-    // Sorttaus
-    table.querySelectorAll('th').forEach((th, idx) => {
+    // Lisää lajittelun click-event
+    thead.querySelectorAll('th').forEach((th, idx) => {
       th.addEventListener('click', () => {
-        const sorted = [...data].sort((a,b) => (a[keys[idx]] > b[keys[idx]]) ? 1 : -1);
-        tbody.innerHTML = '';
-        sorted.forEach(item => {
-          const row = '<tr>' + keys.map(k => `<td>${item[k]}</td>`).join('') + '</tr>';
-          tbody.innerHTML += row;
+        const ascending = sortDirections[idx];
+        jsonData.sort((a, b) => {
+          if (a[keys[idx]] > b[keys[idx]]) return ascending ? 1 : -1;
+          if (a[keys[idx]] < b[keys[idx]]) return ascending ? -1 : 1;
+          return 0;
         });
+        sortDirections[idx] = !ascending; // käännä järjestys
+        renderTable(jsonData);
       });
     });
+
+    renderTable(jsonData);
   });
+
+// Renderöi taulukko
+function renderTable(data) {
+  tbody.innerHTML = '';
+  data.forEach(item => {
+    const row = '<tr>' + Object.values(item).map(v => `<td>${v}</td>`).join('') + '</tr>';
+    tbody.innerHTML += row;
+  });
+}
+
+// Haku
+searchInput.addEventListener('input', () => {
+  const filter = searchInput.value.toLowerCase();
+  const filtered = jsonData.filter(item => 
+    Object.values(item).some(val => String(val).toLowerCase().includes(filter))
+  );
+  renderTable(filtered);
+});
 </script>
 </body>
 </html>
