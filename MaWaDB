@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<title>Staattinen Database</title>
+<style>
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: left; cursor: pointer; }
+th:hover { background-color: #f0f0f0; }
+</style>
+</head>
+<body>
+<h2>Staattinen Database</h2>
+<table id="data-table">
+  <thead></thead>
+  <tbody></tbody>
+</table>
+
+<script>
+// JSON URL GitHub Pagesista
+const url = 'https://<käyttäjänimi>.github.io/public-db/data.json';
+
+// Hae ja näytä data
+fetch(url)
+  .then(res => res.json())
+  .then(data => {
+    const table = document.getElementById('data-table');
+    const keys = Object.keys(data[0] || {});
+    
+    // Luo header
+    table.querySelector('thead').innerHTML = '<tr>' + keys.map(k => `<th>${k}</th>`).join('') + '</tr>';
+    
+    // Luo body
+    const tbody = table.querySelector('tbody');
+    data.forEach(item => {
+      const row = '<tr>' + keys.map(k => `<td>${item[k]}</td>`).join('') + '</tr>';
+      tbody.innerHTML += row;
+    });
+    
+    // Sorttaus
+    table.querySelectorAll('th').forEach((th, idx) => {
+      th.addEventListener('click', () => {
+        const sorted = [...data].sort((a,b) => (a[keys[idx]] > b[keys[idx]]) ? 1 : -1);
+        tbody.innerHTML = '';
+        sorted.forEach(item => {
+          const row = '<tr>' + keys.map(k => `<td>${item[k]}</td>`).join('') + '</tr>';
+          tbody.innerHTML += row;
+        });
+      });
+    });
+  });
+</script>
+</body>
+</html>
